@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEPSE Quant & Technical Studio Terminal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #0b0e14; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .glass-panel { background: rgba(18, 24, 33, 0.9); border: 1px solid #262d3a; backdrop-filter: blur(14px); }
+        .active-tab { background-color: #238636; color: #ffffff; }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #2f3746; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col custom-scrollbar">
+
+    <!-- Top App Navigation -->
+    <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex items-center justify-between border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+            <div class="bg-green-600 p-2 rounded-lg text-white font-bold">
+                <i data-lucide="activity" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-base leading-tight">NEPSE Quant Terminal</h1>
+                <p class="text-xs text-green-400 font-medium">VCP • Bollinger Squeeze • Zero Lag MACD</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="openModal('addTradeModal')" class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-2 rounded-md font-bold flex items-center space-x-1">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Add Trade</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Navigation Bar -->
+    <nav class="bg-[#121821] px-4 pt-2 border-b border-gray-800 flex space-x-2 overflow-x-auto custom-scrollbar">
+        <button id="tab-vcp" onclick="switchTab('vcp')" class="px-4 py-2 text-xs font-semibold rounded-t-lg active-tab flex items-center space-x-2">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>VCP Screener</span>
+        </button>
+        <button id="tab-chart" onclick="switchTab('chart')" class="px-4 py-2 text-xs font-semibold rounded-t-lg text-gray-400 hover:text-white flex items-center space-x-2">
+            <i data-lucide="candlestick-chart" class="w-4 h-4"></i>
+            <span>Technical Studio</span>
+        </button>
+        <button id="tab-portfolio" onclick="switchTab('portfolio')" class="px-4 py-2 text-xs font-semibold rounded-t-lg text-gray-400 hover:text-white flex items-center space-x-2">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+            <span>Portfolio</span>
+        </button>
+        <button id="tab-floorsheet" onclick="switchTab('floorsheet')" class="px-4 py-2 text-xs font-semibold rounded-t-lg text-gray-400 hover:text-white flex items-center space-x-2">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span>Broker Accumulation</span>
+        </button>
+    </nav>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 p-4 max-w-7xl w-full mx-auto space-y-4">
+
+        <!-- TAB 1: VCP & BOOM PREDICTOR ENGINE -->
+        <section id="sec-vcp" class="space-y-4">
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="cpu" class="w-4 h-4 text-green-400"></i>
+                        <span>Quantitative Breakout Detector</span>
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-1">Identifies NEPSE stocks coiling in tight volatility squeezes with volume drying up prior to momentum breakouts[span_2](start_span)[span_2](end_span)[span_3](start_span)[span_3](end_span).</p>
+                </div>
+                <button onclick="runAggressiveScan()" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white text-xs px-4 py-2 rounded-lg font-bold flex items-center justify-center space-x-2">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span>Run Aggressive Scan</span>
+                </button>
+            </div>
+
+            <!-- Terminal Output Window Simulation -->
+            <div id="terminalLog" class="hidden bg-black border border-gray-800 rounded-xl p-3 font-mono text-xs text-green-400 space-y-1 max-h-44 overflow-y-auto custom-scrollbar">
+                <div>[SYSTEM] Initializing NEPSE Quantitative Engine...</div>
+            </div>
+
+            <!-- Stock Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="vcpGrid">
+                <!-- UPCL Card -->
+                <div class="glass-panel p-4 rounded-xl border border-gray-800 hover:border-green-600 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-green-400 bg-green-950 px-2 py-0.5 rounded border border-green-800">VALID VCP (V3)</span>
+                            <h3 class="text-base font-bold text-white mt-1">UPCL</h3>
+                            <p class="text-xs text-gray-400">Universal Power Co.</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-bold text-white">Rs. 346.00</span>
+                            <span class="block text-xs text-green-400">+1.8%</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-xs border-t border-gray-800 pt-2 text-gray-300">
+                        <div class="flex justify-between"><span>Base Contraction:</span><span class="font-bold text-white">8.4% (Tight)</span></div>
+                        <div class="flex justify-between"><span>BB Width (%b):</span><span class="font-bold text-green-400">6.2% (Squeeze)</span></div>
+                        <div class="flex justify-between"><span>Volume Trend:</span><span class="font-bold text-white">Drying Up (-42%)</span></div>
+                        <div class="flex justify-between"><span>Smart Money:</span><span class="font-bold text-white">Broker 39 / 49 Net Buy</span></div>
+                    </div>
+                    <button onclick="loadChart('UPCL')" class="w-full mt-3 bg-gray-800 hover:bg-gray-700 text-xs py-1.5 rounded font-medium text-gray-200">Inspect Chart</button>
+                </div>
+
+                <!-- MAKAR Card -->
+                <div class="glass-panel p-4 rounded-xl border border-gray-800 hover:border-yellow-600 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-yellow-400 bg-yellow-950 px-2 py-0.5 rounded border border-yellow-800">13% BONUS CATALYST</span>
+                            <h3 class="text-base font-bold text-white mt-1">MAKAR</h3>
+                            <p class="text-xs text-gray-400">Makar Jitumaya Hydro</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-bold text-white">Rs. 445.00</span>
+                            <span class="block text-xs text-yellow-400">+0.5%</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-xs border-t border-gray-800 pt-2 text-gray-300">
+                        <div class="flex justify-between"><span>Support Level:</span><span class="font-bold text-white">Rs. 430–450 S1</span></div>
+                        <div class="flex justify-between"><span>SMMA 10 Anchor:</span><span class="font-bold text-white">Rs. 440.64</span></div>
+                        <div class="flex justify-between"><span>Target Exit:</span><span class="font-bold text-yellow-400">Rs. 490 – 510</span></div>
+                        <div class="flex justify-between"><span>MACD Signal:</span><span class="font-bold text-green-400">Bullish Crossover</span></div>
+                    </div>
+                    <button onclick="loadChart('MAKAR')" class="w-full mt-3 bg-gray-800 hover:bg-gray-700 text-xs py-1.5 rounded font-medium text-gray-200">Inspect Chart</button>
+                </div>
+
+                <!-- PCIL Card -->
+                <div class="glass-panel p-4 rounded-xl border border-gray-800 hover:border-blue-600 transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-xs font-bold text-blue-400 bg-blue-950 px-2 py-0.5 rounded border border-blue-800">TREND RETEST</span>
+                            <h3 class="text-base font-bold text-white mt-1">PCIL</h3>
+                            <p class="text-xs text-gray-400">Palpa Cement Ind.</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-bold text-white">Rs. 611.00</span>
+                            <span class="block text-xs text-gray-400">0.0%</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 text-xs border-t border-gray-800 pt-2 text-gray-300">
+                        <div class="flex justify-between"><span>Support Floor:</span><span class="font-bold text-white">Rs. 611.00</span></div>
+                        <div class="flex justify-between"><span>Target Exit:</span><span class="font-bold text-green-400">Rs. 675 – 680</span></div>
+                        <div class="flex justify-between"><span>1-Yr Broker Cost:</span><span class="font-bold text-white">Rs. 706 – 727</span></div>
+                        <div class="flex justify-between"><span>Stoch RSI:</span><span class="font-bold text-blue-400">45.2 (Reset)</span></div>
+                    </div>
+                    <button onclick="loadChart('PCIL')" class="w-full mt-3 bg-gray-800 hover:bg-gray-700 text-xs py-1.5 rounded font-medium text-gray-200">Inspect Chart</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: TECHNICAL STUDIO -->
+        <section id="sec-chart" class="hidden space-y-4">
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-bold text-gray-400">Scrip:</span>
+                        <select id="chartSymbolSelect" onchange="updateChartFromSelect()" class="bg-gray-900 border border-gray-700 text-white text-xs rounded px-2 py-1 font-bold">
+                            <option value="UPCL">UPCL - Universal Power</option>
+                            <option value="MAKAR">MAKAR - Makar Hydro</option>
+                            <option value="PCIL">PCIL - Palpa Cement</option>
+                            <option value="CBBL">CBBL - Chhimek Laghubitta</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <label class="flex items-center space-x-1 cursor-pointer bg-gray-900 px-2 py-1 rounded border border-gray-800">
+                            <input type="checkbox" id="chkSMMA" checked onchange="toggleIndicator('smma')" class="rounded">
+                            <span>SMMA 10/25/50</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer bg-gray-900 px-2 py-1 rounded border border-gray-800">
+                            <input type="checkbox" id="chkBB" onchange="toggleIndicator('bb')" class="rounded">
+                            <span>Bollinger Bands</span>
+                        </label>
+                        <label class="flex items-center space-x-1 cursor-pointer bg-gray-900 px-2 py-1 rounded border border-gray-800">
+                            <input type="checkbox" id="chkMACD" checked onchange="toggleIndicator('macd')" class="rounded">
+                            <span>Zero Lag MACD</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="relative w-full h-80 sm:h-96 bg-gray-950 rounded-lg p-2 border border-gray-900">
+                    <canvas id="techChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PORTFOLIO MANAGER -->
+        <section id="sec-portfolio" class="hidden space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="glass-panel p-3 rounded-xl border border-gray-800">
+                    <span class="text-xs text-gray-400">Total Investment</span>
+                    <h3 id="pSumInvested" class="text-sm sm:text-base font-bold text-white mt-1">Rs. 0.00</h3>
+                </div>
+                <div class="glass-panel p-3 rounded-xl border border-gray-800">
+                    <span class="text-xs text-gray-400">Market Value</span>
+                    <h3 id="pSumValue" class="text-sm sm:text-base font-bold text-white mt-1">Rs. 0.00</h3>
+                </div>
+                <div class="glass-panel p-3 rounded-xl border border-gray-800">
+                    <span class="text-xs text-gray-400">Unrealized PnL</span>
+                    <h3 id="pSumPnL" class="text-sm sm:text-base font-bold text-white mt-1">Rs. 0.00</h3>
+                </div>
+                <div class="glass-panel p-3 rounded-xl border border-gray-800">
+                    <span class="text-xs text-gray-400">Active Positions</span>
+                    <h3 id="pSumPositions" class="text-sm sm:text-base font-bold text-green-400 mt-1">0</h3>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-xl border border-gray-800 overflow-hidden">
+                <div class="px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+                    <h3 class="text-xs font-bold text-white">Active Positions & Target Trackers</h3>
+                    <button onclick="openModal('addTradeModal')" class="bg-green-600 hover:bg-green-700 text-white text-xs px-2.5 py-1 rounded font-medium">Add Position</button>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-900 text-gray-400 font-semibold border-b border-gray-800">
+                            <tr>
+                                <th class="p-3">Stock</th>
+                                <th class="p-3">Qty</th>
+                                <th class="p-3">WACC</th>
+                                <th class="p-3">LTP</th>
+                                <th class="p-3">PnL</th>
+                                <th class="p-3">Target Exit</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolioTableBody" class="divide-y divide-gray-800">
+                            <!-- Rendered dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: BROKER RADAR -->
+        <section id="sec-floorsheet" class="hidden space-y-4">
+            <div class="glass-panel p-4 rounded-xl border border-gray-800 space-y-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-bold text-white">Institutional Broker Cost Basis</h2>
+                        <p class="text-xs text-gray-400">Calculates top broker holding averages vs. market support.</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="bg-gray-900 text-gray-400 font-semibold border-b border-gray-800">
+                            <tr>
+                                <th class="p-3">Broker ID</th>
+                                <th class="p-3">Stock</th>
+                                <th class="p-3">Avg Buy Cost</th>
+                                <th class="p-3">Total Holdings</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <tr>
+                                <td class="p-3 font-bold text-white">Broker 42 (Sani)</td>
+                                <td class="p-3">PCIL</td>
+                                <td class="p-3 text-yellow-400">Rs. 727.06</td>
+                                <td class="p-3">72,878 units</td>
+                                <td class="p-3"><span class="bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-800">Trapped (-16%)</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-white">Broker 41 (Linch)</td>
+                                <td class="p-3">PCIL</td>
+                                <td class="p-3 text-yellow-400">Rs. 706.49</td>
+                                <td class="p-3">34,429 units</td>
+                                <td class="p-3"><span class="bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-800">Trapped (-13%)</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-white">Broker 39 (FLAME)</td>
+                                <td class="p-3">UPCL</td>
+                                <td class="p-3 text-green-400">Rs. 342.50</td>
+                                <td class="p-3">280,000 units</td>
+                                <td class="p-3"><span class="bg-green-950 text-green-400 px-2 py-0.5 rounded border border-green-800">Accumulating</span></td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-white">Broker 49 (Online)</td>
+                                <td class="p-3">UPCL</td>
+                                <td class="p-3 text-green-400">Rs. 344.10</td>
+                                <td class="p-3">175,000 units</td>
+                                <td class="p-3"><span class="bg-green-950 text-green-400 px-2 py-0.5 rounded border border-green-800">Accumulating</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL CONTROLLER FOR TRADES -->
+    <div id="addTradeModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-5 rounded-xl border border-gray-800 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 id="modalTitle" class="text-sm font-bold text-white">Add Position to Portfolio</h3>
+                <button onclick="closeModal('addTradeModal')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-gray-400 mb-1">Stock Symbol</label>
+                    <input type="text" id="mSymbol" placeholder="e.g. UPCL" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white font-bold uppercase">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-400 mb-1">Quantity (Units)</label>
+                        <input type="number" id="mQty" placeholder="100" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-1">WACC (Rs.)</label>
+                        <input type="number" step="0.1" id="mWacc" placeholder="340.00" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-gray-400 mb-1">Current LTP (Rs.)</label>
+                        <input type="number" step="0.1" id="mLtp" placeholder="346.00" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-gray-400 mb-1">Target Exit (Rs.)</label>
+                        <input type="number" step="0.1" id="mTarget" placeholder="385.00" class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-white">
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="saveTrade()" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded font-bold">Save Position</button>
+                <button onclick="closeModal('addTradeModal')" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-2 rounded font-medium">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript -->
+    <script>
+        let portfolio = [
+            { id: 1, symbol: "PCIL", qty: 90, wacc: 618.70, ltp: 611.00, target: 678.00 },
+            { id: 2, symbol: "MAKAR", qty: 85, wacc: 454.00, ltp: 445.00, target: 490.00 },
+            { id: 3, symbol: "SGHL", qty: 40, wacc: 476.00, ltp: 473.00, target: 495.00 },
+            { id: 4, symbol: "CBBL", qty: 18, wacc: 1009.00, ltp: 989.80, target: 1050.00 }
+        ];
+
+        let editId = null;
+        let chartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            renderPortfolio();
+            initChart('UPCL');
+        });
+
+        function switchTab(tab) {
+            ['vcp', 'chart', 'portfolio', 'floorsheet'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('active-tab');
+                document.getElementById(`tab-${t}`).classList.add('text-gray-400');
+            });
+            document.getElementById(`sec-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active-tab');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
+
+            if (tab === 'chart' && !chartInstance) {
+                initChart('UPCL');
+            }
+        }
+
+        function openModal(id) {
+            editId = null;
+            document.getElementById('modalTitle').innerText = "Add Position to Portfolio";
+            document.getElementById('mSymbol').value = "";
+            document.getElementById('mQty').value = "";
+            document.getElementById('mWacc').value = "";
+            document.getElementById('mLtp').value = "";
+            document.getElementById('mTarget').value = "";
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function editTrade(id) {
+            const item = portfolio.find(p => p.id === id);
+            if (!item) return;
+            editId = id;
+            document.getElementById('modalTitle').innerText = `Edit ${item.symbol} Position`;
+            document.getElementById('mSymbol').value = item.symbol;
+            document.getElementById('mQty').value = item.qty;
+            document.getElementById('mWacc').value = item.wacc;
+            document.getElementById('mLtp').value = item.ltp;
+            document.getElementById('mTarget').value = item.target;
+            document.getElementById('addTradeModal').classList.remove('hidden');
+        }
+
+        function saveTrade() {
+            const symbol = document.getElementById('mSymbol').value.toUpperCase().trim();
+            const qty = parseFloat(document.getElementById('mQty').value);
+            const wacc = parseFloat(document.getElementById('mWacc').value);
+            const ltp = parseFloat(document.getElementById('mLtp').value);
+            const target = parseFloat(document.getElementById('mTarget').value);
+
+            if (!symbol || isNaN(qty) || isNaN(wacc)) {
+                alert("Please fill in valid Symbol, Quantity, and WACC.");
+                return;
+            }
+
+            if (editId) {
+                const item = portfolio.find(p => p.id === editId);
+                item.symbol = symbol;
+                item.qty = qty;
+                item.wacc = wacc;
+                item.ltp = isNaN(ltp) ? wacc : ltp;
+                item.target = isNaN(target) ? wacc * 1.1 : target;
+            } else {
+                portfolio.push({
+                    id: Date.now(),
+                    symbol: symbol,
+                    qty: qty,
+                    wacc: wacc,
+                    ltp: isNaN(ltp) ? wacc : ltp,
+                    target: isNaN(target) ? wacc * 1.1 : target
+                });
+            }
+
+            closeModal('addTradeModal');
+            renderPortfolio();
+        }
+
+        function deleteTrade(id) {
+            if (confirm("Are you sure you want to remove this position?")) {
+                portfolio = portfolio.filter(p => p.id !== id);
+                renderPortfolio();
+            }
+        }
+
+        function renderPortfolio() {
+            const tbody = document.getElementById('portfolioTableBody');
+            tbody.innerHTML = "";
+
+            let totalInvested = 0;
+            let totalValue = 0;
+
+            portfolio.forEach(item => {
+                const invested = item.qty * item.wacc;
+                const value = item.qty * item.ltp;
+                const pnl = value - invested;
+                const pnlPct = (pnl / invested) * 100;
+
+                totalInvested += invested;
+                totalValue += value;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-900/50";
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-white">${item.symbol}</td>
+                    <td class="p-3">${item.qty}</td>
+                    <td class="p-3">Rs. ${item.wacc.toFixed(2)}</td>
+                    <td class="p-3">Rs. ${item.ltp.toFixed(2)}</td>
+                    <td class="p-3 font-bold ${pnl >= 0 ? 'text-green-400' : 'text-red-400'}">
+                        Rs. ${pnl.toFixed(2)} (${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%)
+                    </td>
+                    <td class="p-3 text-green-400">Rs. ${item.target.toFixed(2)}</td>
+                    <td class="p-3 text-right space-x-1">
+                        <button onclick="editTrade(${item.id})" class="text-blue-400 hover:text-blue-300 p-1"><i data-lucide="edit" class="w-4 h-4"></i></button>
+                        <button onclick="deleteTrade(${item.id})" class="text-red-400 hover:text-red-300 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const totalPnL = totalValue - totalInvested;
+            document.getElementById('pSumInvested').innerText = `Rs. ${totalInvested.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('pSumValue').innerText = `Rs. ${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('pSumPnL').innerText = `Rs. ${totalPnL.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+            document.getElementById('pSumPnL').className = `text-sm sm:text-base font-bold mt-1 ${totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`;
+            document.getElementById('pSumPositions').innerText = portfolio.length;
+
+            lucide.createIcons();
+        }
+
+        function runAggressiveScan() {
+            const log = document.getElementById('terminalLog');
+            log.classList.remove('hidden');
+            log.innerHTML = "<div>[SYSTEM] Initializing NEPSE Aggressive Scan...</div>";
+            
+            const steps = [
+                "Scanning floor-sheets for aggressive buy/sell ratio (2026-11-07)...",
+                "aggressive scan 10/220 (Processing Hydro sector)...",
+                "aggressive scan 40/220 (UPCL: Volatility Compression 8.4% DETECTED)",
+                "aggressive scan 90/220 (MAKAR: Bonus share accumulation active)",
+                "aggressive scan 150/220 (PCIL: Retesting dynamic trendline)",
+                "[COMPLETE] Found 3 High-Conviction VCP / Catalysts."
+            ];
+
+            steps.forEach((txt, idx) => {
+                setTimeout(() => {
+                    const line = document.createElement('div');
+                    line.innerText = txt;
+                    log.appendChild(line);
+                    log.scrollTop = log.scrollHeight;
+                }, (idx + 1) * 350);
+            });
+        }
+
+        function loadChart(symbol) {
+            document.getElementById('chartSymbolSelect').value = symbol;
+            switchTab('chart');
+            initChart(symbol);
+        }
+
+        function updateChartFromSelect() {
+            const sym = document.getElementById('chartSymbolSelect').value;
+            initChart(sym);
+        }
+
+        function toggleIndicator(ind) {
+            const sym = document.getElementById('chartSymbolSelect').value;
+            initChart(sym);
+        }
+
+        function initChart(symbol) {
+            const ctx = document.getElementById('techChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+
+            const labels = ['Oct 1', 'Oct 5', 'Oct 10', 'Oct 15', 'Oct 20', 'Oct 25', 'Nov 1', 'Nov 5'];
+            let prices = [330, 335, 338, 340, 342, 345, 344, 346];
+            let smma10 = [328, 331, 334, 337, 340, 342, 343, 344];
+            let upperBB = [340, 344, 348, 350, 352, 354, 353, 355];
+            let lowerBB = [320, 324, 328, 330, 332, 334, 335, 337];
+
+            if (symbol === 'MAKAR') {
+                prices = [420, 428, 435, 440, 448, 442, 444, 445];
+                smma10 = [418, 422, 428, 434, 440, 441, 442, 443];
+            } else if (symbol === 'PCIL') {
+                prices = [640, 630, 625, 618, 615, 612, 611, 611];
+                smma10 = [645, 638, 630, 624, 619, 616, 614, 613];
+            }
+
+            const datasets = [{
+                label: `${symbol} Price`,
+                data: prices,
+                borderColor: '#238636',
+                backgroundColor: 'rgba(35, 134, 54, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.2
+            }];
+
+            if (document.getElementById('chkSMMA').checked) {
+                datasets.push({
+                    label: 'SMMA 10',
+                    data: smma10,
+                    borderColor: '#da3633',
+                    borderWidth: 1.5,
+                    borderDash: [4, 4],
+                    fill: false
+                });
+            }
+
+            if (document.getElementById('chkBB').checked) {
+                datasets.push({
+                    label: 'Upper BB',
+                    data: upperBB,
+                    borderColor: '#388bfd',
+                    borderWidth: 1,
+                    fill: false
+                });
+                datasets.push({
+                    label: 'Lower BB',
+                    data: lowerBB,
+                    borderColor: '#388bfd',
+                    borderWidth: 1,
+                    fill: false
+                });
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#c9d1d9', font: { size: 10 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+                        y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
